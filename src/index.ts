@@ -161,6 +161,12 @@ const execFileAsync = promisify(execFile);
 const DEFAULT_MAIN_JID = 'web:main';
 const DEFAULT_MAIN_NAME = 'Main';
 const SAFE_REQUEST_ID_RE = /^[A-Za-z0-9_-]+$/;
+// OOM detection: only match `code 137` (Docker cgroup OOM killer).
+// Do NOT match `signal SIGKILL` — for host processes it is ambiguous
+// (could be user stop, process tree kill, or actual OOM).
+// exitLabel is either `code N` or `signal X` — never both —
+// so this only triggers on Docker container OOM exits.
+const OOM_EXIT_RE = /code 137/;
 
 let globalMessageCursor: MessageCursor = { timestamp: '', id: '' };
 let sessions: Record<string, string> = {};
@@ -2426,8 +2432,8 @@ async function processGroupMessages(chatJid: string): Promise<boolean> {
       return true;
     }
 
-    // ── OOM auto-recovery: detect consecutive exit code 137 (SIGKILL/OOM) ──
-    const isOom = /code 137|signal SIGKILL/.test(errorDetail);
+    // ── OOM auto-recovery: detect consecutive exit code 137 (OOM) ──
+    const isOom = OOM_EXIT_RE.test(errorDetail);
     if (isOom) {
       const folder = effectiveGroup.folder;
       consecutiveOomExits[folder] = (consecutiveOomExits[folder] || 0) + 1;
