@@ -13,6 +13,7 @@ interface UserDiscordConfig {
   hasBotToken: boolean;
   botTokenMasked: string | null;
   enabled: boolean;
+  streamingMode: 'edit' | 'off';
   connected: boolean;
   updatedAt: string | null;
 }
@@ -147,6 +148,28 @@ export function DiscordChannelCard() {
                   测试连接
                 </Button>
               )}
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-border">
+              <div>
+                <p className="text-xs font-medium text-foreground">流式编辑</p>
+                <p className="text-xs text-muted-foreground">回复时实时编辑消息（打字机效果），默认关闭</p>
+              </div>
+              <Switch
+                checked={config?.streamingMode === 'edit'}
+                disabled={loading || saving}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await api.put('/api/config/user-im/discord', {
+                      streamingMode: checked ? 'edit' : 'off',
+                    });
+                    setConfig((prev) => prev ? { ...prev, streamingMode: checked ? 'edit' : 'off' } : prev);
+                    toast.success(checked ? '已开启流式编辑' : '已关闭流式编辑');
+                  } catch {
+                    toast.error('更新失败');
+                  }
+                }}
+              />
             </div>
 
             <div className="text-xs text-muted-foreground mt-2">

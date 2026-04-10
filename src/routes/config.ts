@@ -2056,6 +2056,7 @@ configRoutes.get('/user-im/discord', authMiddleware, (c) => {
         hasBotToken: false,
         botTokenMasked: null,
         enabled: false,
+        streamingMode: 'off',
         updatedAt: null,
         connected,
       });
@@ -2066,6 +2067,7 @@ configRoutes.get('/user-im/discord', authMiddleware, (c) => {
         ? config.botToken.slice(0, 4) + '***' + config.botToken.slice(-4)
         : null,
       enabled: config.enabled ?? false,
+      streamingMode: config.streamingMode ?? 'off',
       updatedAt: config.updatedAt,
       connected,
     });
@@ -2105,6 +2107,7 @@ configRoutes.put('/user-im/discord', authMiddleware, async (c) => {
   const next = {
     botToken: current?.botToken || '',
     enabled: current?.enabled ?? true,
+    streamingMode: current?.streamingMode ?? ('off' as const),
   };
 
   if (typeof validation.data.botToken === 'string') {
@@ -2117,6 +2120,9 @@ configRoutes.put('/user-im/discord', authMiddleware, async (c) => {
     next.enabled = validation.data.enabled;
   } else if (!current && next.botToken) {
     next.enabled = true;
+  }
+  if (typeof validation.data.streamingMode === 'string') {
+    next.streamingMode = validation.data.streamingMode;
   }
 
   try {
@@ -2138,6 +2144,7 @@ configRoutes.put('/user-im/discord', authMiddleware, async (c) => {
         ? saved.botToken.slice(0, 4) + '***' + saved.botToken.slice(-4)
         : null,
       enabled: saved.enabled ?? false,
+      streamingMode: saved.streamingMode ?? 'off',
       updatedAt: saved.updatedAt,
       connected,
     });

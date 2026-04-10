@@ -70,6 +70,7 @@ export interface DingTalkConnectConfig {
 export interface DiscordConnectConfig {
   botToken: string;
   enabled?: boolean;
+  streamingMode?: 'edit' | 'off';
 }
 
 export interface ConnectFeishuOptions {
@@ -615,7 +616,10 @@ class IMConnectionManager {
     },
   ): Promise<boolean> {
     if (!config.botToken) return false;
-    const channel = createDiscordChannel({ botToken: config.botToken });
+    const channel = createDiscordChannel(
+      { botToken: config.botToken },
+      { streamingMode: config.streamingMode ?? 'off' },
+    );
     return this.connectChannel(userId, 'discord', channel, {
       onReady: () => logger.info({ userId }, 'User Discord bot connected'),
       onNewChat,

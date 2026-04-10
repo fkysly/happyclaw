@@ -727,11 +727,13 @@ export const DiscordConfigSchema = z
     botToken: z.string().max(2000).optional(),
     clearBotToken: z.boolean().optional(),
     enabled: z.boolean().optional(),
+    streamingMode: z.enum(['edit', 'off']).optional(),
   })
   .refine(
     (data) =>
       typeof data.botToken === 'string' ||
       data.clearBotToken === true ||
-      typeof data.enabled === 'boolean',
+      typeof data.enabled === 'boolean' ||
+      typeof data.streamingMode === 'string',
     { message: 'At least one config field must be provided' },
   );

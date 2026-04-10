@@ -3051,12 +3051,14 @@ interface DingTalkSecretPayload {
 export interface UserDiscordConfig {
   botToken: string;
   enabled?: boolean;
+  streamingMode?: 'edit' | 'off';
   updatedAt: string | null;
 }
 
 interface StoredDiscordProviderConfigV1 {
   version: 1;
   enabled?: boolean;
+  streamingMode?: 'edit' | 'off';
   updatedAt: string;
   secret: EncryptedSecrets;
 }
@@ -3416,6 +3418,7 @@ export function getUserDiscordConfig(
     return {
       botToken: secret.botToken,
       enabled: stored.enabled,
+      streamingMode: stored.streamingMode === 'edit' ? 'edit' : 'off',
       updatedAt: stored.updatedAt || null,
     };
   } catch (err) {
@@ -3431,12 +3434,14 @@ export function saveUserDiscordConfig(
   const normalized: UserDiscordConfig = {
     botToken: normalizeSecret(next.botToken, 'botToken'),
     enabled: next.enabled,
+    streamingMode: next.streamingMode === 'edit' ? 'edit' : 'off',
     updatedAt: new Date().toISOString(),
   };
 
   const payload: StoredDiscordProviderConfigV1 = {
     version: 1,
     enabled: normalized.enabled,
+    streamingMode: normalized.streamingMode,
     updatedAt: normalized.updatedAt || new Date().toISOString(),
     secret: encryptChannelSecret<DiscordSecretPayload>({
       botToken: normalized.botToken,

@@ -656,7 +656,11 @@ export function createDingTalkChannel(
 
 // ─── Discord Adapter ────────────────────────────────────────────
 
-export function createDiscordChannel(config: DiscordConnectionConfig): IMChannel {
+export function createDiscordChannel(
+  config: DiscordConnectionConfig,
+  opts?: { streamingMode?: 'edit' | 'off' },
+): IMChannel {
+  const streamingEnabled = opts?.streamingMode === 'edit';
   let inner: DiscordConnection | null = null;
   let typingIntervals = new Map<string, ReturnType<typeof setInterval>>();
 
@@ -742,6 +746,7 @@ export function createDiscordChannel(config: DiscordConnectionConfig): IMChannel
     },
 
     async createStreamingSession(chatId, onCardCreated?) {
+      if (!streamingEnabled) return undefined;
       if (!inner?.createStreamingSession) return undefined;
       return inner.createStreamingSession(chatId, onCardCreated);
     },

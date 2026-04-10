@@ -8074,6 +8074,7 @@ async function main(): Promise<void> {
       effectiveDiscord = {
         botToken: userDiscord.botToken,
         enabled: userDiscord.enabled,
+        streamingMode: userDiscord.streamingMode,
       };
     }
 
