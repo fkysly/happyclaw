@@ -384,10 +384,12 @@ export function createDiscordConnection(
           ? msg.mentions.has(discordClient.user)
           : false;
 
-        // Gate 1: require_mention mode — only process if bot was @mentioned
-        if (opts.shouldProcessGroupMessage) {
+        // Gate 1: require_mention / activation_mode check
+        // shouldProcessGroupMessage returns false for unregistered groups,
+        // so always allow @Bot messages and first-time channel messages through
+        if (opts.shouldProcessGroupMessage && !isBotMentioned) {
           const shouldProcess = opts.shouldProcessGroupMessage(jid, senderImId);
-          if (!shouldProcess && !isBotMentioned) {
+          if (!shouldProcess) {
             logger.debug(
               { jid },
               'Discord group message dropped (mention required but bot not @mentioned)',
@@ -396,9 +398,9 @@ export function createDiscordConnection(
           }
         }
         // Gate 2: owner_mentioned mode — only process if sender is owner or bot was @mentioned
-        if (opts.isGroupOwnerMessage) {
+        if (opts.isGroupOwnerMessage && !isBotMentioned) {
           const isOwner = opts.isGroupOwnerMessage(jid, senderImId);
-          if (!isOwner && !isBotMentioned) {
+          if (!isOwner) {
             logger.debug(
               { jid, senderImId },
               'Discord group message dropped (owner_mentioned mode)',

@@ -6800,7 +6800,8 @@ function buildOnAgentMessage(): (baseChatJid: string, agentId: string) => void {
  */
 function shouldProcessGroupMessage(chatJid: string, senderImId?: string): boolean {
   const group = registeredGroups[chatJid] ?? getRegisteredGroup(chatJid);
-  if (!group) return false;
+  // Unknown group: allow through so it can be auto-registered via onNewChat
+  if (!group) return true;
 
   // activation_mode 直接存在 IM 群组自身的 registered_groups 记录上（绑定时设置），
   // 无需追溯 target_main_jid
