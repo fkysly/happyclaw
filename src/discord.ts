@@ -656,13 +656,77 @@ export function createDiscordConnection(
         });
 
         // Ready event
-        discordClient.once(Events.ClientReady, (readyClient) => {
+        discordClient.once(Events.ClientReady, async (readyClient) => {
           logger.info(
             { botTag: readyClient.user.tag },
             'Discord bot connected',
           );
           readyFired = true;
           opts.onReady?.();
+
+          // Register HappyClaw slash commands as Discord Application Commands
+          try {
+            await readyClient.application.commands.set([
+              { name: 'clear', description: '清除当前对话的会话上下文' },
+              { name: 'list', description: '查看所有工作区和对话列表' },
+              { name: 'status', description: '查看当前工作区/对话状态' },
+              { name: 'recall', description: '总结最近的对话内容' },
+              {
+                name: 'require_mention',
+                description: '切换群聊响应模式（需要 @Bot 才响应）',
+                options: [{
+                  name: 'enabled',
+                  description: 'true 或 false',
+                  type: 3, // STRING
+                  required: true,
+                  choices: [
+                    { name: 'true - 需要 @Bot', value: 'true' },
+                    { name: 'false - 全量响应', value: 'false' },
+                  ],
+                }],
+              },
+            ]);
+            // Clear guild-level commands (remove any stale ones from other apps)
+            for (const guild of readyClient.guilds.cache.values()) {
+              try { await guild.commands.set([]); } catch {}
+            }
+            logger.info('Discord application commands registered');
+          } catch (err: any) {
+            logger.warn({ err: err.message }, 'Failed to register application commands');
+          }
+        });
+
+        // Slash command interactions (Discord Application Commands)
+        discordClient.on(Events.InteractionCreate, async (interaction) => {
+          if (!interaction.isChatInputCommand()) return;
+          if (stopping) return;
+
+          const isDM = !interaction.guildId;
+          const jid = isDM
+            ? `discord:dm:${interaction.user.id}`
+            : `discord:${interaction.channelId}`;
+
+          // Build command string matching HappyClaw's text command format
+          let cmdBody = interaction.commandName;
+          const enabledOpt = interaction.options.getString('enabled');
+          if (enabledOpt) cmdBody += ' ' + enabledOpt;
+
+          try {
+            await interaction.deferReply();
+            const reply = await opts.onCommand?.(jid, cmdBody, interaction.user.id);
+            if (reply) {
+              // Discord interaction replies have 2000 char limit
+              const truncated = reply.length > 2000 ? reply.slice(0, 1997) + '...' : reply;
+              await interaction.editReply(truncated);
+            } else {
+              await interaction.editReply('命令已执行');
+            }
+          } catch (err: any) {
+            logger.error({ jid, cmd: cmdBody, err: err.message }, 'Discord slash command failed');
+            try {
+              await interaction.editReply('命令执行失败');
+            } catch {}
+          }
         });
 
         // Message create event — use raw event as primary to ensure DM delivery,
