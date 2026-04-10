@@ -17,7 +17,7 @@ export const TaskPatchSchema = z.object({
   status: z.enum(['active', 'paused']).optional(),
   next_run: z.string().optional(),
   notify_channels: z
-    .array(z.enum(['feishu', 'telegram', 'qq', 'wechat', 'dingtalk']))
+    .array(z.enum(['feishu', 'telegram', 'qq', 'wechat', 'dingtalk', 'discord']))
     .nullable()
     .optional(),
 });
@@ -39,7 +39,7 @@ export const TaskCreateSchema = z
     execution_mode: z.enum(['host', 'container']).optional(),
     script_command: z.string().max(4096).optional(),
     notify_channels: z
-      .array(z.enum(['feishu', 'telegram', 'qq', 'wechat', 'dingtalk']))
+      .array(z.enum(['feishu', 'telegram', 'qq', 'wechat', 'dingtalk', 'discord']))
       .nullable()
       .optional(),
   })
@@ -719,5 +719,19 @@ export const DingTalkConfigSchema = z
       data.clearClientSecret === true ||
       typeof data.enabled === 'boolean' ||
       typeof data.streamingMode === 'string',
+    { message: 'At least one config field must be provided' },
+  );
+
+export const DiscordConfigSchema = z
+  .object({
+    botToken: z.string().max(2000).optional(),
+    clearBotToken: z.boolean().optional(),
+    enabled: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      typeof data.botToken === 'string' ||
+      data.clearBotToken === true ||
+      typeof data.enabled === 'boolean',
     { message: 'At least one config field must be provided' },
   );
