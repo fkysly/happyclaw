@@ -143,10 +143,29 @@ export function DiscordChannelCard() {
                 保存 Discord 配置
               </Button>
               {config?.hasBotToken && (
-                <Button variant="outline" onClick={handleTest} disabled={testing}>
-                  {testing && <Loader2 className="size-4 animate-spin" />}
-                  测试连接
-                </Button>
+                <>
+                  <Button variant="outline" onClick={handleTest} disabled={testing}>
+                    {testing && <Loader2 className="size-4 animate-spin" />}
+                    测试连接
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="text-destructive hover:text-destructive"
+                    disabled={saving}
+                    onClick={async () => {
+                      try {
+                        setSaving(true);
+                        await api.put('/api/config/user-im/discord', { clearBotToken: true, enabled: false });
+                        setBotToken('');
+                        setConfig((prev) => prev ? { ...prev, hasBotToken: false, botTokenMasked: null, enabled: false, connected: false } : prev);
+                        toast.success('Bot Token 已清除');
+                      } catch { toast.error('清除失败'); }
+                      finally { setSaving(false); }
+                    }}
+                  >
+                    清除 Token
+                  </Button>
+                </>
               )}
             </div>
 
