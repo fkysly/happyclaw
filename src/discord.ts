@@ -787,8 +787,20 @@ export function createDiscordConnection(
           );
         });
 
-        // Login
+        // Login and wait for ClientReady before returning
+        // (login() resolves before ClientReady fires, so isConnected()
+        // would return false if we returned immediately after login)
+        const readyPromise = new Promise<void>((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject(new Error('Discord ClientReady timeout (15s)'));
+          }, 15000);
+          discordClient!.once(Events.ClientReady, () => {
+            clearTimeout(timeout);
+            resolve();
+          });
+        });
         await discordClient.login(config.botToken);
+        await readyPromise;
         return true;
       } catch (err) {
         logger.error({ err }, 'Discord initial connection failed');
