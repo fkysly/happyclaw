@@ -378,6 +378,14 @@ export function createDiscordConnection(
       // Store last message ID for reply context
       lastMessageIds.set(jid, msgId);
 
+      // Register chat early (before mention gate) so that
+      // shouldProcessGroupMessage can find the group in registeredGroups.
+      // Without this, first-time guild channel messages are always dropped
+      // because shouldProcessGroupMessage returns false for unknown groups.
+      storeChatMetadata(jid, new Date().toISOString());
+      updateChatName(jid, chatName);
+      opts.onNewChat(jid, chatName);
+
       // Guild channel: check group filtering (must check actual @mention first)
       if (!isDM) {
         const isBotMentioned = discordClient?.user
@@ -509,11 +517,6 @@ export function createDiscordConnection(
       if (!content && !attachmentsJson) {
         return;
       }
-
-      // Register chat and update metadata
-      storeChatMetadata(jid, new Date().toISOString());
-      updateChatName(jid, chatName);
-      opts.onNewChat(jid, chatName);
 
       // Handle slash commands
       const slashMatch = content.match(/^\/(\S+)(?:\s+(.*))?$/i);
